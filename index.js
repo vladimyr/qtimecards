@@ -83,6 +83,16 @@ function _extractData(html, sortOrder, forceInEvent) {
     return records;
 }
 
+/**
+ * grabs user records from qtimecards.com
+ * @param  {String}  username      acc username
+ * @param  {String}  password      acc password
+ * @param  {String}  sortOrder     'asc' or 'desc'
+ * @param  {Boolean} forceInEvent  forces day record
+ *                                 to start with IN
+ *                                 event
+ * @return {Array}                 array of user records
+ */
 function getRecords(username, password, sortOrder, forceInEvent) {
     return request.headAsync(baseUrl + '/login/auth')
         .spread(function(response, body) {
@@ -95,7 +105,10 @@ function getRecords(username, password, sortOrder, forceInEvent) {
         })
         .spread(function(response, body) {
             return _extractData(body, sortOrder, forceInEvent);
-        });  
+        })
+        .tap(function(){
+            return request.get(baseUrl + '/j_spring_security_logout');
+        }); 
 }
 
 module.exports = getRecords;

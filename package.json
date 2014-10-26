@@ -1,8 +1,11 @@
 {
   "name": "qtimecards",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "grabs user records from qtimecards.com",
   "main": "index.js",
+  "bin": {
+    "qgrab": "./bin/cli.js"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -10,7 +13,10 @@
   "license": "WTFPL",
   "dependencies": {
     "bluebird": "^2.3.6",
+    "chalk": "^0.5.1",
     "cheerio": "^0.17.0",
+    "commander": "^2.5.0",
+    "multiline": "^1.0.1",
     "request": "^2.46.0"
   }
 }
