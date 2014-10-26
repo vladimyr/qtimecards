@@ -1,0 +1,16 @@
+{
+  "name": "qtimecards",
+  "version": "0.0.1",
+  "description": "grabs user records from qtimecards.com",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "vladimyr",
+  "license": "WTFPL",
+  "dependencies": {
+    "bluebird": "^2.3.6",
+    "cheerio": "^0.17.0",
+    "request": "^2.46.0"
+  }
+}

@@ -1,0 +1,17 @@
+/**
+ * change ? placeholders with actual data
+ * and remove .template suffix from the
+ * filename
+ */
+
+'use strict';
+
+var getRecords = require('./index.js');
+
+var username = '?', // enter your username
+    password = '?'; // enter your password
+
+getRecords(username, password, 'asc', true)
+    .then(function(records){
+        console.log(JSON.stringify(records, null, 2));
+    });
