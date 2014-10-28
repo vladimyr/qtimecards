@@ -7,16 +7,16 @@ format.
 
 ## Installation
 
-```bash    
+```bash
 npm install -g vladimyr/qtimecards
 ```
 
 ## How to use
 
-```bash  
-qgrab -u <username> -p <password> [-s <sort method>] 
+```bash
+qgrab -u <username> -p <password> [-s <sort method>]
 ```
 
 Username and password match qtimecards.com credentials and
 both of them are required. Sorting method (asc/desc) is
-optional, default is asc.
+optional, default is desc.
