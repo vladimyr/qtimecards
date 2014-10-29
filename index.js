@@ -28,7 +28,9 @@ function _extractData(html, sortOrder, forceInEvent) {
     sortOrder = sortOrder || 'desc';
     var $ = cheerio.load(html);
     
-    var records = [], shiftedEntry = [];
+    var records      = [], 
+        shiftedEntry = [];
+
     $('.one-day-records-holder').each(function(i, el){
         var $el   = $(el),
             date  = $el.find('.date-holder').last().text().trim(),
@@ -48,6 +50,7 @@ function _extractData(html, sortOrder, forceInEvent) {
 
         var entries = $(el).find('.row'),
             last    = entries.length - 1;
+
         entries.each(function(i, el){
             var $entry   = $(el).find('.time-holder, .reader-holder, .status-holder img'),
                 time     = $entry.eq(0).text().trim(),
@@ -101,14 +104,14 @@ function getRecords(username, password, sortOrder, forceInEvent) {
                     'j_username': username,
                     'j_password': password
                 }
+            })
+            .tap(function(){
+                return request.get(baseUrl + '/j_spring_security_logout');
             });
         })
         .spread(function(response, body) {
             return _extractData(body, sortOrder, forceInEvent);
         })
-        .tap(function(){
-            return request.get(baseUrl + '/j_spring_security_logout');
-        }); 
 }
 
 module.exports = getRecords;
