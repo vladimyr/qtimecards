@@ -20,6 +20,7 @@
     "bluebird": "^2.3.6",
     "chalk": "^0.5.1",
     "cheerio": "^0.17.0",
+    "cli-table": "^0.3.1",
     "commander": "^2.5.0",
     "debug": "^2.1.0",
     "inquirer": "^0.8.0",

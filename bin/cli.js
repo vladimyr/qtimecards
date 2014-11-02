@@ -5,6 +5,7 @@
 var commander  = require('commander'),
     multiline  = require('multiline'),
     chalk      = require('chalk'),
+    Table      = require('cli-table'),
     Path       = require('path'),
     prompt     = require(Path.resolve(__dirname, './prompt.js')),
     getRecords = require(Path.resolve(__dirname, '../index.js'));
@@ -20,6 +21,7 @@ program
     .version(programVer)
     .option('-u, --username [username]')
     .option('-t, --total [working hrs per day]')
+    .option('--table [days to show]')
     .option('-s, --sort [method]', 'sorting method: "asc" or "desc"');
 
 
@@ -28,11 +30,15 @@ var helpMsg = multiline(function(){/*
   qtimecards.com for the specified account and 
   returns them in json format
   
-  Example:
+  Get records as json:
 
   $ qgrab [-u <username>] [-s <sorting_method>]
 
-  Get total time:
+  Output latest daily records in table format:
+
+  $ qgrab --table [records_count] [-u <useraname>] [-s <sorting_method>]
+
+  Get total time stats:
   
   $ qgrab [-u <username>] -t <working_hrs_per_day>
 */});
@@ -51,6 +57,10 @@ var postProcess = function(records){
 if (program.total) {
     var workHrsPerDay = parseInt(program.total, 10);
     postProcess = require(Path.resolve(__dirname, '../util/totalTimeStats.js'))(workHrsPerDay);
+}
+else if (program.table) {
+    var count = parseInt(program.table, 10);
+    postProcess = require(Path.resolve(__dirname, '../util/tableOutput.js'))(count);
 }
 
 

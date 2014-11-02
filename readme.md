@@ -36,13 +36,23 @@ qgrab -s desc
 ### Calculate time stats:
 ```bash
 qgrab -t
-```
-which outputs following info:
-```bash
-Total [7.5 working hrs per day]: <required_time> / <completed_time>
+
+# which outputs following info:
+# Total [7.5 working hrs per day]: <required_time> / <completed_time>
 ```
 
 If you want to change daily norm pass decimal value as parameter:
 ```bash
-qgrab -t 8
+qgrab -t 8  # set daily norm to 8hrs
+```
+
+### Output latest daily records in table format:
+```bash
+qgrab --table
+```
+
+If you want to see more than one day history pass decimal value as
+parameter:
+```bash
+qgrab --table 3  # shows records from past 3 days
 ```
