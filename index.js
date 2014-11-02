@@ -88,6 +88,73 @@ function _extractData(html, sortOrder, forceInEvent) {
     return records;
 }
 
+function _submitRecord(recordData) {
+    // TODO: remove this in production
+    var baseUrl = 'https://tonlyyi6fp3k.runscope.net';
+    var options = { form: { 'editReason': recordData } };
+
+    return request.postAsync(baseUrl + '/record/saveRecordManual', options)
+        .spread(function complete(response, body){
+            debug('server responded with: %d', response.statusCode);
+            debug('response body: %s', body);
+             
+            if (response.statusCode != 200)
+                return false;
+
+            return true;
+        });
+}
+
+
+function Client(username, password) {
+    this._username = username;
+    this._password = password;
+}
+
+Client.prototype.login = function() {
+    var self = this;
+
+    return request.headAsync(baseUrl + '/login/auth')
+        .spread(function(response, body) {
+            return request.postAsync(baseUrl + '/j_spring_security_check', {
+                form: {
+                    'j_username': self._username,
+                    'j_password': self._password
+                }
+            });
+        });   
+};
+
+function _checkLoginSuccess(response) {
+    var urlPath = response.req.path;
+
+    debug('server responded with: %d', response.statusCode);
+    debug('response url: %s', urlPath);
+    // debug('reponse body: %s', body);
+    
+    if ( !urlPath.match(/^\/record\/usersRecords\/\d+$/))
+        throw new Error('Login failed, wrong username and/or password!');
+}
+
+Client.prototype.getRecords = function(sortOrder, forceInEvent){
+    return function handler(response, body) {
+        _checkLoginSuccess(response);
+        return _extractData(body, sortOrder, forceInEvent);
+    };
+};
+
+Client.prototype.submitNewRecord = function(recordData){
+    return function hadler(response, body){
+        _checkLoginSuccess(response);
+        return _submitRecord(recordData);
+    };
+};
+
+Client.prototype.logout = function() {
+    return request.get(baseUrl + '/j_spring_security_logout');    
+};
+
+
 /**
  * grabs user records from qtimecards.com
  * @param  {String}  username      acc username
@@ -99,30 +166,26 @@ function _extractData(html, sortOrder, forceInEvent) {
  * @return {Array}                 array of user records
  */
 function getRecords(username, password, sortOrder, forceInEvent) {
-    return request.headAsync(baseUrl + '/login/auth')
-        .spread(function(response, body) {
-            return request.postAsync(baseUrl + '/j_spring_security_check', {
-                form: {
-                    'j_username': username,
-                    'j_password': password
-                }
-            })
-            .tap(function(){
-                return request.get(baseUrl + '/j_spring_security_logout');
-            });
-        })
-        .spread(function(response, body) {
-            var urlPath = response.req.path;
-
-            debug('server responded with: %d', response.statusCode);
-            debug('response url: %s', urlPath);
-            // debug('reponse body: %s', body);
-            
-            if ( !urlPath.match(/^\/record\/usersRecords\/\d+$/))
-                throw new Error('Login failed, wrong username and/or password!');
-
-            return _extractData(body, sortOrder, forceInEvent);
-        })
+    var client = new Client(username, password);
+    return client.login()
+        .spread(client.getRecords(sortOrder, forceInEvent))
+        .tap(client.logout);
 }
 
-module.exports = getRecords;
+/**
+ * submits new record to qtimecards.com
+ * @param  {String} username   acc username
+ * @param  {String} password   acc password
+ * @param  {String} recordData record contents
+ */
+function submitNewRecord(username, password, recordData) {
+    var client = new Client(username, password);
+    return client.login()
+        .spread(client.submitNewRecord(recordData))
+        .tap(client.logout);
+}
+
+module.exports = {
+    getRecords:      getRecords,
+    submitNewRecord: submitNewRecord
+};

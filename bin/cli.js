@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 
-'use strict'
+'use strict';
 
-var commander  = require('commander'),
-    multiline  = require('multiline'),
-    chalk      = require('chalk'),
-    Table      = require('cli-table'),
-    Path       = require('path'),
-    prompt     = require(Path.resolve(__dirname, './prompt.js')),
-    getRecords = require(Path.resolve(__dirname, '../index.js'));
+var commander = require('commander'),
+    multiline = require('multiline'),
+    chalk     = require('chalk'),
+    Table     = require('cli-table'),
+    Path      = require('path'),
+    prompt    = require(Path.resolve(__dirname, './prompt.js')),
+    client    = require(Path.resolve(__dirname, '../index.js'));
 
 // grab metadata from package.json
 var pkgData     = require(Path.resolve(__dirname, '../package.json')),
@@ -21,6 +21,7 @@ program
     .version(programVer)
     .option('-u, --username [username]')
     .option('-t, --total [working hrs per day]')
+    .option('-a, --add-record [record data]')
     .option('--table [days to show]')
     .option('-s, --sort [method]', 'sorting method: "asc" or "desc"');
 
@@ -50,20 +51,6 @@ program.on('--help', function(){
 program.parse(process.argv);
 
 
-var postProcess = function(records){
-    console.log(JSON.stringify(records, null, 2));
-};
-
-if (program.total) {
-    var workHrsPerDay = parseInt(program.total, 10);
-    postProcess = require(Path.resolve(__dirname, '../util/totalTimeStats.js'))(workHrsPerDay);
-}
-else if (program.table) {
-    var count = parseInt(program.table, 10);
-    postProcess = require(Path.resolve(__dirname, '../util/tableOutput.js'))(count);
-}
-
-
 function validateString(input) {
     return input && input.length > 0;
 }
@@ -90,20 +77,63 @@ var passwordInput = {
     validate: validateString
 };
 
+var confirmSubmission = {
+    type:      'confirm',
+    message:   'Are you sure you want to submit new record?',
+    name:      'confirmed',
+    'default': false
+};
+
 var inputs = [ passwordInput ];
 
 if (!program.username)
     inputs.unshift(usernameInput);
 
+
+var postProcess;
+
+if (program.addRecord) {
+    inputs.push(confirmSubmission);
+
+    postProcess = function(success) {
+        if (!success)
+            console.log(chalk.magenta('New record is not submitted!'));
+        else
+            console.log(chalk.green('Record sucessfully submitted.'));
+    };
+} else {
+    postProcess = function(records){
+        console.log(JSON.stringify(records, null, 2));
+    };
+
+    if (program.total) {
+        var workHrsPerDay = parseInt(program.total, 10);
+        postProcess = require(Path.resolve(__dirname, '../util/totalTimeStats.js'))(workHrsPerDay);
+    } else if (program.table) {
+        var count = parseInt(program.table, 10);
+        postProcess = require(Path.resolve(__dirname, '../util/tableOutput.js'))(count);
+    }
+}
+
+
 prompt(inputs)
     .then(function complete(answers){
-        var username     = defaultEmailDomain(program.username || answers.username),
-            password     = answers.password,
-            sortMethod   = program.sort || 'asc',
-            forceInEvent = true;
-
         console.log();
-        return getRecords(username, password, sortMethod, forceInEvent);
+
+        var username = defaultEmailDomain(program.username || answers.username),
+            password = answers.password;
+        
+        if (!program.addRecord) {
+            var sortMethod   = program.sort || 'asc',
+                forceInEvent = true;
+
+            return client.getRecords(username, password, sortMethod, forceInEvent);
+        }
+
+        if (!answers.confirmed)
+            return false;
+
+        return client.submitNewRecord(username, password, program.addRecord);
     })
     .done(postProcess, handleError);
 
