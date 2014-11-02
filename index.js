@@ -31,7 +31,8 @@ function _extractData(html, sortOrder, forceInEvent) {
     var records      = [], 
         shiftedEntry = [];
 
-    $('.one-day-records-holder').each(function(i, el){
+    // changed from: .one-day-records-holder
+    $('.custom-table-data-one-row').each(function(i, el){
         var $el   = $(el),
             date  = $el.find('.date-holder').last().text().trim(),
             total = $el.find('.day-total-holder').text().trim();

@@ -6,6 +6,7 @@ var commander  = require('commander'),
     multiline  = require('multiline'),
     chalk      = require('chalk'),
     Path       = require('path'),
+    prompt     = require(Path.resolve(__dirname, './prompt.js')),
     getRecords = require(Path.resolve(__dirname, '../index.js'));
 
 // grab metadata from package.json
@@ -18,8 +19,7 @@ var program = new (commander.Command)(programName);
 program
     .version(programVer)
     .option('-u, --username [username]')
-    .option('-p, --password [password]')
-    .option('-t  --total')
+    .option('-t, --total [working hrs per day]')
     .option('-s, --sort [method]', 'sorting method: "asc" or "desc"');
 
 
@@ -43,18 +43,52 @@ program.on('--help', function(){
 
 program.parse(process.argv);
 
-if (!program.username || !program.password) {
-    chalk.red(console.error('No username and/or password given!'));
-    return;
-}
 
 var postProcess = function(records){
     console.log(JSON.stringify(records, null, 2));
 };
 
-if (program.total)
-    postProcess = require(Path.resolve(__dirname, '../util/totalTimeStats.js'));
+if (program.total) {
+    var workHrsPerDay = parseInt(program.total, 10);
+    postProcess = require(Path.resolve(__dirname, '../util/totalTimeStats.js'))(workHrsPerDay);
+}
 
-// do actual work
-getRecords(program.username, program.password, program.sort || 'asc', true)
+
+function validateString(input) {
+    return input && input.length > 0;
+}
+
+function defaultEmailDomain(input) {
+    if (input.indexOf('@') == -1)
+        return input + '@extensionengine.com';
+
+    return input;
+}
+
+var usernameInput = {
+    type:     'input',
+    message:  'Enter your qtimecards.com username (email):',
+    name:     'username',
+    validate: validateString,
+    filter:   defaultEmailDomain
+};
+
+var passwordInput = {
+    type:    'password',
+    message: 'Enter your qtimecards.com password',
+    name:    'password',
+    validate: validateString
+};
+
+var inputs = [ passwordInput ];
+
+if (!program.username)
+    inputs.unshift(usernameInput);
+
+prompt(inputs)
+    .then(function complete(answers){
+        console.log();
+        return getRecords(program.username || answers.username, answers.password, 
+            program.sort || 'asc', true);
+    })
     .done(postProcess);
