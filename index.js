@@ -89,8 +89,6 @@ function _extractData(html, sortOrder, forceInEvent) {
 }
 
 function _submitRecord(recordData) {
-    // TODO: remove this in production
-    var baseUrl = 'https://tonlyyi6fp3k.runscope.net';
     var options = { form: { 'editReason': recordData } };
 
     return request.postAsync(baseUrl + '/record/saveRecordManual', options)
