@@ -11,9 +11,9 @@ function printEntriesTable(record) {
     record.entries.forEach(function(entry, i){
         var type = entry.type;
         if (type === 'in')
-            type = chalk.inverse.green(type);
+            type = chalk.green(type);
         else
-            type = chalk.inverse.red(type);
+            type = chalk.red(type);
 
         var time = entry.time;
         time = chalk.bold(time);
