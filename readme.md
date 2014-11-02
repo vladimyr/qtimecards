@@ -46,10 +46,3 @@ If you want to change daily norm pass decimal value as parameter:
 ```bash
 qgrab -t 8
 ```
-
-## Notice
-
-
-Be warned, if you enter wrong credentials utility will return 
-empty data set. Proper error handling will be implemented in
-next version!
