@@ -30,11 +30,11 @@ var helpMsg = multiline(function(){/*
   
   Example:
 
-  $ qgrab -u <username> -p <password>
+  $ qgrab [-u <username>] [-s <sorting_method>]
 
   Get total time:
   
-  $ qgrab -u <username> -p <password> -t
+  $ qgrab [-u <username>] -t <working_hrs_per_day>
 */});
 
 program.on('--help', function(){
@@ -87,8 +87,12 @@ if (!program.username)
 
 prompt(inputs)
     .then(function complete(answers){
+        var username     = defaultEmailDomain(program.username || answers.username),
+            password     = answers.password,
+            sortMethod   = program.sort || 'asc',
+            forceInEvent = true;
+
         console.log();
-        return getRecords(program.username || answers.username, answers.password, 
-            program.sort || 'asc', true);
+        return getRecords(username, password, sortMethod, forceInEvent);
     })
     .done(postProcess);

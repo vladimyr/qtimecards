@@ -13,10 +13,43 @@ npm install -g vladimyr/qtimecards
 
 ## How to use
 
-```bash  
-qgrab -u <username> -p <password> [-s <sort method>] 
+Invoke in your terminal with credentials for qtimecards.com.
+It is not necessary to enter domain part of email because
+auto-completion will take care of that.
+
+Additionally you could pass username/email parameter to skip
+corresponding prompt via following invocation:
+```bash
+qgrab -u <username_or_email>
 ```
 
-Username and password match qtimecards.com credentials and
-both of them are required. Sorting method (asc/desc) is
-optional, default is asc.
+### Grab all your records as JSON:
+```bash  
+qgrab
+```
+
+Grab all your records as JSON with reversed order:
+```bash
+qgrab -s desc
+```
+
+### Calculate time stats:
+```bash
+qgrab -t
+```
+which outputs following info:
+```bash
+Total [7.5 working hrs per day]: <required_time> / <completed_time>
+```
+
+If you want to change daily norm pass decimal value as parameter:
+```bash
+qgrab -t 8
+```
+
+## Notice
+
+
+Be warned, if you enter wrong credentials utility will return 
+empty data set. Proper error handling will be implemented in
+next version!
