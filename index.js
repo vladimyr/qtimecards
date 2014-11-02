@@ -3,7 +3,8 @@
 var Path    = require('path'),
     Promise = require('bluebird'),
     request = require('request'),
-    cheerio = require('cheerio');
+    cheerio = require('cheerio'),
+    debug   = require('debug')('http');
 
 var cookieJar = request.jar(),
     request   = request.defaults({
@@ -111,6 +112,15 @@ function getRecords(username, password, sortOrder, forceInEvent) {
             });
         })
         .spread(function(response, body) {
+            var urlPath = response.req.path;
+
+            debug('server responded with: %d', response.statusCode);
+            debug('response url: %s', urlPath);
+            // debug('reponse body: %s', body);
+            
+            if ( !urlPath.match(/^\/record\/usersRecords\/\d+$/))
+                throw new Error('Login failed, wrong username and/or password!');
+
             return _extractData(body, sortOrder, forceInEvent);
         })
 }

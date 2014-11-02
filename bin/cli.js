@@ -95,4 +95,8 @@ prompt(inputs)
         console.log();
         return getRecords(username, password, sortMethod, forceInEvent);
     })
-    .done(postProcess);
+    .done(postProcess, handleError);
+
+function handleError(err){
+    console.error(chalk.red(err.message));
+}
