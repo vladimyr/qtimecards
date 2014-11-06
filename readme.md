@@ -56,3 +56,8 @@ parameter:
 ```bash
 qgrab --table 3  # shows records from past 3 days
 ```
+
+### Add new record:
+```bash
+qgrab --add-record
+```

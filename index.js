@@ -54,7 +54,9 @@ function _extractData(html, sortOrder, forceInEvent) {
             last    = entries.length - 1;
 
         entries.each(function(i, el){
-            var $entry   = $(el).find('.time-holder, .reader-holder, .status-holder img'),
+            // NOTE:
+            // time holder selector changed to be more specific
+            var $entry   = $(el).find('.time-holder a, .reader-holder, .status-holder img'),
                 time     = $entry.eq(0).text().trim(),
                 location = $entry.eq(1).text().trim(),
                 type     = _imgName($entry.eq(2).attr('src').trim());

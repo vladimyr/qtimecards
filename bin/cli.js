@@ -42,6 +42,10 @@ var helpMsg = multiline(function(){/*
   Get total time stats:
   
   $ qgrab [-u <username>] -t <working_hrs_per_day>
+
+  Add new record:
+
+  $ qgrab [-u <username>] -as
 */});
 
 program.on('--help', function(){
