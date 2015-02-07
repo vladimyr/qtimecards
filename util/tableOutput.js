@@ -30,7 +30,9 @@ module.exports = function(count){
     count = count || 1;
     
     return function printTable(records){
-        var targetRecords = records.slice(records.length - count);
+        var startDate     = new Date().getDay() + 1,
+            targetRecords = records.slice(startDate - count, startDate);
+        
         targetRecords.forEach(printEntriesTable);
     };
 }

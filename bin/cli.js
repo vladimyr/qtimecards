@@ -4,14 +4,14 @@
 
 var commander = require('commander'),
     multiline = require('multiline'),
+    template  = require('lodash.template'),
     chalk     = require('chalk'),
     Table     = require('cli-table'),
-    Path      = require('path'),
-    prompt    = require(Path.resolve(__dirname, './prompt.js')),
-    client    = require(Path.resolve(__dirname, '../index.js'));
+    prompt    = require('./prompt.js'),
+    client    = require('../index.js');
 
 // grab metadata from package.json
-var pkgData     = require(Path.resolve(__dirname, '../package.json')),
+var pkgData     = require('../package.json'),
     programName = Object.keys(pkgData.bin)[0],
     programVer  = pkgData.version;
 
@@ -19,37 +19,35 @@ var pkgData     = require(Path.resolve(__dirname, '../package.json')),
 var program = new (commander.Command)(programName);
 program
     .version(programVer)
-    .option('-u, --username [username]')
+    .option('-u, --username <username>')
     .option('-t, --total [working hrs per day]')
-    .option('-a, --add-record [record data]')
+    .option('-a, --add-record <record data>')
     .option('--table [days to show]')
-    .option('-s, --sort [method]', 'sorting method: "asc" or "desc"');
+    .option('-s, --sort <method>', 'sorting method: "asc" or "desc"');
 
 
-var helpMsg = multiline(function(){/*
-  This command line utility grabs records from
-  qtimecards.com for the specified account and 
-  returns them in json format
+var helpMsg = template(multiline(function(){/*
+  This command line utility grabs records from ${location} 
+  for the specified user account and returns them as json
   
   Get records as json:
-
-  $ qgrab [-u <username>] [-s <sorting_method>]
+  $ ${binary} [-u <username>] [-s <sorting_method>]
 
   Output latest daily records in table format:
-
-  $ qgrab --table [records_count] [-u <useraname>] [-s <sorting_method>]
+  $ ${binary} --table [records_count] [-u <useraname>] [-s <sorting_method>]
 
   Get total time stats:
-  
-  $ qgrab [-u <username>] -t <working_hrs_per_day>
+  $ ${binary} [-u <username>] -t <working_hrs_per_day>
 
   Add new record:
-
-  $ qgrab [-u <username>] -as
-*/});
+  $ ${binary} [-u <username>] --add-record <record_message>
+*/}));
 
 program.on('--help', function(){
-    console.log(helpMsg);
+    console.log(helpMsg({
+        location: client.baseUrl,
+        binary:   programName
+    }));
 });
 
 program.parse(process.argv);
@@ -97,6 +95,12 @@ if (!program.username)
 var postProcess;
 
 if (program.addRecord) {
+    // check for blank submissions
+    if (typeof(program.addRecord) !== 'string') {
+        console.error(chalk.red('Record message is required!'));
+        return;
+    }
+
     inputs.push(confirmSubmission);
 
     postProcess = function(success) {
@@ -112,10 +116,10 @@ if (program.addRecord) {
 
     if (program.total) {
         var workHrsPerDay = parseInt(program.total, 10);
-        postProcess = require(Path.resolve(__dirname, '../util/totalTimeStats.js'))(workHrsPerDay);
+        postProcess = require('../util/totalTimeStats.js')(workHrsPerDay);
     } else if (program.table) {
         var count = parseInt(program.table, 10);
-        postProcess = require(Path.resolve(__dirname, '../util/tableOutput.js'))(count);
+        postProcess = require('../util/tableOutput.js')(count);
     }
 }
 

@@ -1,9 +1,9 @@
 Qtimecards records grabber
 ==========================
 
-This utility grabs all records from qtimecards.com for the
-specified user account. Data is exported to stdout in JSON
-format.
+This utility grabs all records from attend.hotelstouch.com 
+for the specified user account. Data is exported to stdout 
+in JSON format.
 
 ## Installation
 
@@ -59,5 +59,5 @@ qgrab --table 3  # shows records from past 3 days
 
 ### Add new record:
 ```bash
-qgrab --add-record
+qgrab --add-record <message>
 ```

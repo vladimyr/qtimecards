@@ -13,7 +13,7 @@ var cookieJar = request.jar(),
         followAllRedirects: true
     });
 
-var baseUrl = 'http://qtimecards.com';
+var baseUrl = 'http://attend.hotelstouch.com';
 
 request = Promise.promisifyAll(request);
 
@@ -26,7 +26,7 @@ function _imgName(path) {
 }
 
 function _extractData(html, sortOrder, forceInEvent) {
-    sortOrder = sortOrder || 'desc';
+    sortOrder = sortOrder || 'asc';
     var $ = cheerio.load(html);
     
     var records      = [], 
@@ -35,13 +35,21 @@ function _extractData(html, sortOrder, forceInEvent) {
     // changed from: .one-day-records-holder
     $('.custom-table-data-one-row').each(function(i, el){
         var $el   = $(el),
-            date  = $el.find('.date-holder').last().text().trim(),
-            total = $el.find('.day-total-holder').text().trim();
+            date  = $el.find('.date-holder').last().text().trim();
+
+        var $duration = $el.find('.text-right'),
+            working   = $duration.eq(0).text().trim(),
+            _break    = $duration.eq(1).text().trim(),
+            total     = $duration.eq(2).text().trim(),
+            overtime  = $duration.eq(3).text().trim();
 
         var dateRecords = {
-            date:    date,
-            total:   total,
-            entries: []
+            date:     date,
+            total:    total,
+            working:  working,
+            'break':  _break,
+            overtime: overtime,
+            entries:  []
         };
 
         // place shifted entry
@@ -67,9 +75,9 @@ function _extractData(html, sortOrder, forceInEvent) {
                 location: location
             };
 
-            // if last entry is "out" and forceInEvent is set to true
+            // if last entry is "in" and forceInEvent is set to true
             // shift event for the next day
-            if (forceInEvent && i == last && type === 'out') {
+            if (forceInEvent && i == last && type === 'in') {
                 shiftedEntry.push(entry);
             } 
             // add entry to curent day's records
@@ -78,13 +86,13 @@ function _extractData(html, sortOrder, forceInEvent) {
             }
         });
 
-        if (sortOrder.toLowerCase() === 'asc')
+        if (sortOrder.toLowerCase() === 'desc')
             dateRecords.entries.reverse();
 
         records.push(dateRecords);
     });
 
-    if (sortOrder.toLowerCase() === 'asc')
+    if (sortOrder.toLowerCase() === 'desc')
         records.reverse();
 
     return records;
@@ -186,6 +194,7 @@ function submitNewRecord(username, password, recordData) {
 }
 
 module.exports = {
+    baseUrl:         baseUrl,
     getRecords:      getRecords,
     submitNewRecord: submitNewRecord
 };
