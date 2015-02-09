@@ -5,8 +5,7 @@ var Promise  = require('bluebird'),
 
 module.exports = function prompt(args) {
     var deferred = Promise.pending(),
-        inputs   = Array.isArray(args) 
-                    ? args 
+        inputs   = Array.isArray(args) ? args 
                     : Array.prototype.slice.call(arguments, 0);
 
     inquirer.prompt(inputs, function(answers){

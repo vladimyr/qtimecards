@@ -18,9 +18,9 @@ function printEntriesTable(record) {
         var time = entry.time;
         time = chalk.bold(time);
 
-        entriesTable.push([ time, type, entry.location ])
+        entriesTable.push([ time, type, entry.location ]);
     });
-    entriesTable.push([ chalk.bold('Total:', record.total), '', ''])
+    entriesTable.push([ chalk.bold('Total:', record.total), '', '']);
 
     console.log('Entries for: %s', record.date);
     console.log(entriesTable + '\n');
@@ -35,4 +35,4 @@ module.exports = function(count){
         
         targetRecords.forEach(printEntriesTable);
     };
-}
+};

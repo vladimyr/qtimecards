@@ -20,5 +20,5 @@ module.exports = function getStats(workHrsPerDay){
 
         console.log('Total [%s working hrs per day]: %s / %s', workHrsPerDay,
             requiredTime.format('h:mm'), completedTime.format('h:mm'));
-    }
+    };
 };
