@@ -6,6 +6,7 @@ var commander = require('commander'),
     multiline = require('multiline'),
     template  = require('lodash.template'),
     chalk     = require('chalk'),
+    url       = require('url'),
     Table     = require('cli-table'),
     prompt    = require('./prompt.js'),
     client    = require('../index.js');
@@ -64,9 +65,13 @@ function defaultEmailDomain(input) {
     return input;
 }
 
+var ctx = {
+    domain: url.parse(client.baseUrl).hostname
+};
+
 var usernameInput = {
     type:     'input',
-    message:  'Enter your qtimecards.com username (email):',
+    message:  template('Enter your ${domain} username (email):')(ctx),
     name:     'username',
     validate: validateString,
     filter:   defaultEmailDomain
@@ -74,7 +79,7 @@ var usernameInput = {
 
 var passwordInput = {
     type:    'password',
-    message: 'Enter your qtimecards.com password',
+    message:  template('Enter your ${domain} password')(ctx),
     name:    'password',
     validate: validateString
 };

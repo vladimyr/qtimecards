@@ -13,7 +13,7 @@ var cookieJar = request.jar(),
         followAllRedirects: true
     });
 
-var baseUrl = 'http://attend.hotelstouch.com';
+var baseUrl = 'http://attend.dbtouch.com';
 
 request = Promise.promisifyAll(request);
 
@@ -29,8 +29,7 @@ function _extractData(html, sortOrder, forceInEvent) {
     sortOrder = sortOrder || 'asc';
     var $ = cheerio.load(html);
     
-    var records      = [], 
-        shiftedEntry = [];
+    var records = [];
 
     // changed from: .one-day-records-holder
     $('.custom-table-data-one-row').each(function(i, el){
@@ -52,12 +51,6 @@ function _extractData(html, sortOrder, forceInEvent) {
             entries:  []
         };
 
-        // place shifted entry
-        if (shiftedEntry[0]) {
-            dateRecords.entries.push(shiftedEntry[0]);
-            shiftedEntry = [];
-        }
-
         var entries = $(el).find('.row'),
             last    = entries.length - 1;
 
@@ -75,11 +68,12 @@ function _extractData(html, sortOrder, forceInEvent) {
                 location: location
             };
 
-            // if last entry is "in" and forceInEvent is set to true
-            // shift event for the next day
-            if (forceInEvent && i == last && type === 'in') {
-                shiftedEntry.push(entry);
-            } 
+            // if first entry is "out" and forceInEvent 
+            // is set to true shift event back to prev day
+            if (forceInEvent && i === 0 && type === 'out') {
+                var prevDateRecrods = records[records.length - 1];
+                prevDateRecrods && prevDateRecrods.entries.push(entry);
+            }
             // add entry to curent day's records
             else {
                 dateRecords.entries.push(entry);   
