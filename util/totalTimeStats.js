@@ -10,8 +10,9 @@ require('moment-duration-format');
 module.exports = function getStats(workHrsPerDay){
     workHrsPerDay = workHrsPerDay || 7.5;
 
-    return function calculateTime(records){    
-        var requiredTime  = moment.duration(records.length * workHrsPerDay, 'hours'),
+    return function calculateTime(data){
+        var records       = data.records,
+            requiredTime  = moment.duration(records.length * workHrsPerDay, 'hours'),
             completedTime = moment.duration(0);
 
         records.forEach(function(record){

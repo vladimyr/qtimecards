@@ -1,6 +1,7 @@
 'use strict';
 
 var chalk = require('chalk'),
+    fecha = require('fecha'),
     Table = require('cli-table');
 
 function printEntriesTable(record) {
@@ -22,15 +23,17 @@ function printEntriesTable(record) {
     });
     entriesTable.push([ chalk.bold('Total:', record.total), '', '']);
 
-    console.log('Entries for: %s', record.date);
+    var date = new Date(record.date);
+    console.log('Entries for: %s', fecha.format(date, 'DD.MM.YYYY'));
     console.log(entriesTable + '\n');
 }
 
 module.exports = function(count){
-    count = count || 1;
+    count = Number(count) || 1;
     
-    return function printTable(records){
-        var startDate     = new Date().getDate(),
+    return function printTable(data){
+        var records       = data.records,
+            startDate     = new Date().getDate(),
             targetRecords = records.slice(startDate - count, startDate);
         
         targetRecords.forEach(printEntriesTable);

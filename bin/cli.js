@@ -7,9 +7,8 @@ var commander = require('commander'),
     template  = require('lodash.template'),
     chalk     = require('chalk'),
     url       = require('url'),
-    Table     = require('cli-table'),
     prompt    = require('./prompt.js'),
-    client    = require('../index.js');
+    Client    = require('../index.js');
 
 // grab metadata from package.json
 var pkgData     = require('../package.json'),
@@ -46,7 +45,7 @@ var helpMsg = template(multiline(function(){/*
 
 program.on('--help', function(){
     console.log(helpMsg({
-        location: client.baseUrl,
+        location: Client.baseUrl,
         binary:   programName
     }));
 });
@@ -66,7 +65,7 @@ function defaultEmailDomain(input) {
 }
 
 var ctx = {
-    domain: url.parse(client.baseUrl).hostname
+    domain: url.parse(Client.baseUrl).hostname
 };
 
 var usernameInput = {
@@ -129,24 +128,31 @@ if (program.addRecord) {
 }
 
 
+var confirmed;
+
 prompt(inputs)
-    .then(function complete(answers){
+    .then(function complete(answers) {
         console.log();
 
-        var username = defaultEmailDomain(program.username || answers.username),
-            password = answers.password;
-        
-        if (!program.addRecord) {
-            var sortMethod   = program.sort || 'asc',
-                forceInEvent = true;
+        confirmed = answers.confirmed;
 
-            return client.getRecords(username, password, sortMethod, forceInEvent);
+        return Client.create({
+            username: defaultEmailDomain(program.username || answers.username),
+            password: answers.password
+        });
+    })
+    .then(function created(client){
+        if (!program.addRecord) {
+            return client.getRecords({
+                sortMethod: Client.SortOrder.fromStr(program.sort),
+                forceInEvent: true
+            });
         }
 
-        if (!answers.confirmed)
+        if (!confirmed)
             return false;
 
-        return client.submitNewRecord(username, password, program.addRecord);
+        return client.submitNewRecord(program.addRecord);
     })
     .done(postProcess, handleError);
 

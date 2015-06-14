@@ -1,194 +1,106 @@
 'use strict';
 
-var Path    = require('path'),
-    Promise = require('bluebird'),
+var Promise = require('bluebird'),
+    Url     = require('url'),
     request = require('request'),
-    cheerio = require('cheerio'),
+    scrape  = require('./lib/scraper.js'),
+    types   = require('./lib/types.js'),
     debug   = require('debug')('http');
 
-var cookieJar = request.jar(),
-    request   = request.defaults({
-        jar:                cookieJar,
-        followRedirect:     true,
-        followAllRedirects: true
-    });
-
-var baseUrl = 'http://attend.dbtouch.com';
-
+request = request.defaults({
+    jar:                true,
+    followRedirect:     true,
+    followAllRedirects: true
+});
 request = Promise.promisifyAll(request);
 
+var BASE_URL = 'http://attend.dbtouch.com';
 
-function _imgName(path) {
-    var extname  = Path.extname(path),
-        basename = Path.basename(path);
 
-    return basename.substring(0, basename.indexOf(extname));
+function Client(baseUrl) {
+    this._baseUrl  = baseUrl || BASE_URL;
 }
 
-function _extractData(html, sortOrder, forceInEvent) {
-    sortOrder = sortOrder || 'asc';
-    var $ = cheerio.load(html);
-    
-    var records = [];
+Client.create = function(options){
+    options = options || {};
 
-    // changed from: .one-day-records-holder
-    $('.custom-table-data-one-row').each(function(i, el){
-        var $el   = $(el),
-            date  = $el.find('.date-holder').last().text().trim();
+    var client = new Client(options.baseUrl);
+    return client._login(options.username, options.password);
+};
+Client.baseUrl   = BASE_URL;
+Client.SortOrder = types.SortOrder;
+Client.EntryType = types.EntryType;
 
-        var $duration = $el.find('.text-right'),
-            working   = $duration.eq(0).text().trim(),
-            _break    = $duration.eq(1).text().trim(),
-            total     = $duration.eq(2).text().trim(),
-            overtime  = $duration.eq(3).text().trim();
-
-        var dateRecords = {
-            date:     date,
-            total:    total,
-            working:  working,
-            'break':  _break,
-            overtime: overtime,
-            entries:  []
-        };
-
-        var entries = $(el).find('.row'),
-            last    = entries.length - 1;
-
-        entries.each(function(i, el){
-            // NOTE:
-            // time holder selector changed to be more specific
-            var $entry   = $(el).find('.time-holder a, .reader-holder, .status-holder img'),
-                time     = $entry.eq(0).text().trim(),
-                location = $entry.eq(1).text().trim(),
-                type     = _imgName($entry.eq(2).attr('src').trim());
-            
-            var entry = {
-                time:     time,
-                type:     type,
-                location: location
-            };
-
-            // if first entry is "out" and forceInEvent 
-            // is set to true shift event back to prev day
-            if (forceInEvent && i === 0 && type === 'out') {
-                var prevDateRecrods = records[records.length - 1];
-                prevDateRecrods && prevDateRecrods.entries.push(entry);
-            }
-            // add entry to curent day's records
-            else {
-                dateRecords.entries.push(entry);   
-            }
-        });
-
-        if (sortOrder.toLowerCase() === 'desc')
-            dateRecords.entries.reverse();
-
-        records.push(dateRecords);
-    });
-
-    if (sortOrder.toLowerCase() === 'desc')
-        records.reverse();
-
-    return records;
-}
-
-function _submitRecord(recordData) {
-    var options = { form: { 'editReason': recordData } };
-
-    return request.postAsync(baseUrl + '/record/saveRecordManual', options)
-        .spread(function complete(response, body){
-            debug('server responded with: %d', response.statusCode);
-            debug('response body: %s', body);
-             
-            if (response.statusCode != 200)
-                return false;
-
-            return true;
-        });
-}
-
-
-function Client(username, password) {
-    this._username = username;
-    this._password = password;
-}
-
-Client.prototype.login = function() {
-    var self = this;
-
-    return request.headAsync(baseUrl + '/login/auth')
-        .spread(function(response, body) {
-            return request.postAsync(baseUrl + '/j_spring_security_check', {
-                form: {
-                    'j_username': self._username,
-                    'j_password': self._password
-                }
-            });
-        });   
+Client.prototype.dispose = function(){
+    return this._login();
 };
 
-function _checkLoginSuccess(response) {
-    var urlPath = response.req.path;
+Client.prototype._login = function(username, password){
+    var self = this,
+        url  = Url.resolve(self._baseUrl, '/login/auth'),
+        options;
 
-    debug('server responded with: %d', response.statusCode);
-    debug('response url: %s', urlPath);
-    // debug('reponse body: %s', body);
-    
-    if ( !urlPath.match(/^\/record\/usersRecords\/\d+$/))
-        throw new Error('Login failed, wrong username and/or password!');
-}
+    self._username = username;
 
-Client.prototype.getRecords = function(sortOrder, forceInEvent){
-    return function handler(response, body) {
-        _checkLoginSuccess(response);
-        return _extractData(body, sortOrder, forceInEvent);
-    };
+    return request.headAsync(url)
+        .spread(function complete(response, body) {
+            url = Url.resolve(self._baseUrl, '/j_spring_security_check');
+            options = {
+                form: {
+                    'j_username': username,
+                    'j_password': password
+                }
+            };
+
+            return request.postAsync(url, options);
+        })
+        .spread(function complete(response, body){
+            var urlPath = response.req.path;
+
+            debug('server responded with: %d', response.statusCode);
+            debug('response url: %s', urlPath);
+
+            var matches = urlPath.match(/^\/record\/usersRecords\/(\d+)$/);
+
+            if (matches && matches[1]) {
+                self._userId = Number(matches[1]);
+                return self;
+            }
+
+            throw new Error('Login failed, wrong username and/or password!');
+        });
+};
+
+Client.prototype._logout = function() {
+    var url = Url.resolve(this._baseUrl, '/j_spring_security_logout');
+    return request.get(url);
+};
+
+Client.prototype.getRecords = function(options){
+    options = options || {};
+
+    var path   = '/record/usersRecords/' + this._userId,
+        url    = Url.resolve(this._baseUrl, path),
+        offset = options.offset || 1;
+
+    return request.getAsync(url, { qs: { offset: offset }})
+        .spread(function complete(response, body){
+            return scrape(body, options.sortOrder, options.forceInEvent);
+        });
 };
 
 Client.prototype.submitNewRecord = function(recordData){
-    return function hadler(response, body){
-        _checkLoginSuccess(response);
-        return _submitRecord(recordData);
-    };
+    var self    = this,
+        url     = Url.resolve(self.baseUrl, '/record/saveRecordManual'),
+        options = { form: { 'editReason': recordData } };
+
+    return request.postAsync(url, options)
+        .spread(function complete(response, body){
+            debug('server responded with: %d', response.statusCode);
+            debug('response body: %s', body);
+
+            return response.statusCode === 200;
+        });
 };
 
-Client.prototype.logout = function() {
-    return request.get(baseUrl + '/j_spring_security_logout');    
-};
-
-
-/**
- * grabs user records from qtimecards.com
- * @param  {String}  username      acc username
- * @param  {String}  password      acc password
- * @param  {String}  sortOrder     'asc' or 'desc'
- * @param  {Boolean} forceInEvent  forces day record
- *                                 to start with IN
- *                                 event
- * @return {Array}                 array of user records
- */
-function getRecords(username, password, sortOrder, forceInEvent) {
-    var client = new Client(username, password);
-    return client.login()
-        .spread(client.getRecords(sortOrder, forceInEvent))
-        .tap(client.logout);
-}
-
-/**
- * submits new record to qtimecards.com
- * @param  {String} username   acc username
- * @param  {String} password   acc password
- * @param  {String} recordData record contents
- */
-function submitNewRecord(username, password, recordData) {
-    var client = new Client(username, password);
-    return client.login()
-        .spread(client.submitNewRecord(recordData))
-        .tap(client.logout);
-}
-
-module.exports = {
-    baseUrl:         baseUrl,
-    getRecords:      getRecords,
-    submitNewRecord: submitNewRecord
-};
+module.exports = Client;

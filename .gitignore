@@ -1,3 +1,9 @@
+# deps
 node_modules
+
+# editors
+.idea
 *.sublime-*
-example.js
+
+# private stuff
+example/credentials.json
