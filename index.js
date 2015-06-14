@@ -3,7 +3,7 @@
 var Promise = require('bluebird'),
     Url     = require('url'),
     request = require('request'),
-    scrape  = require('./lib/scraper.js'),
+    scraper = require('./lib/scraper.js'),
     types   = require('./lib/types.js'),
     debug   = require('debug')('http');
 
@@ -85,7 +85,20 @@ Client.prototype.getRecords = function(options){
 
     return request.getAsync(url, { qs: { offset: offset }})
         .spread(function complete(response, body){
-            return scrape(body, options.sortOrder, options.forceInEvent);
+            return scraper.scrapeRecordsPage(body, options.sortOrder, options.forceInEvent);
+        });
+};
+
+Client.prototype.getVacationInfo = function(){
+    var path   = '/dayOff/listUsersDayOffRequests/' + this._userId,
+        url    = Url.resolve(this._baseUrl, path);
+
+    return request.getAsync(url)
+        .spread(function complete(response, body){
+            return scraper.scrapeDaysOffPage(body);
+        })
+        .then(function complete(data){
+            return data.vacation;
         });
 };
 

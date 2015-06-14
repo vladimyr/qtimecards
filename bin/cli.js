@@ -34,7 +34,7 @@ var helpMsg = template(multiline(function(){/*
   $ ${binary} [-u <username>] [-s <sorting_method>]
 
   Output latest daily records in table format:
-  $ ${binary} --table [records_count] [-u <useraname>] [-s <sorting_method>]
+  $ ${binary} --table [records_count] [-u <username>] [-s <sorting_method>]
 
   Get total time stats:
   $ ${binary} [-u <username>] -t <working_hrs_per_day>
@@ -111,7 +111,7 @@ if (program.addRecord) {
         if (!success)
             console.log(chalk.magenta('New record is not submitted!'));
         else
-            console.log(chalk.green('Record sucessfully submitted.'));
+            console.log(chalk.green('Record successfully submitted.'));
     };
 } else {
     postProcess = function(records){
