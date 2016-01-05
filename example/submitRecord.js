@@ -10,14 +10,8 @@ var client = Client.create({ baseUrl: 'http://attend.dbtouch.com' });
 
 client.login(username, password)
   .then(function complete() {
-    return client.getRecords({
+    return client.submitRecord({
       userId: credentials.userId,
-      sortOrder: 'asc',
-      normalizeRecords: true,
-      includeAbsenceInfo: true,
-      offset: 2
+      message: 'Testing qtimecards API client...'
     });
-  })
-  .then(function(records) {
-    console.log(JSON.stringify(records, null, 2));
   });

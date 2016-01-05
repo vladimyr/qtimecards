@@ -1,114 +1,109 @@
 'use strict';
 
-var Promise = require('bluebird'),
-    request = require('request'),
-    scraper = require('./lib/scraper.js'),
-    types   = require('./lib/types.js'),
-    debug   = require('debug')('http');
+var Promise = require('bluebird');
+var urlJoin = require('url-join');
+var debug = require('debug')('client');
 
+// setup request
+var request = require('request');
 request = request.defaults({
-    jar:                true,
-    followRedirect:     true,
+    jar: true,
+    followRedirect: true,
+    // follow non GET redirects
     followAllRedirects: true
 });
-request = Promise.promisifyAll(request);
+request = Promise.promisifyAll(request, { multiArgs: true });
+
 
 var BASE_URL = 'http://attend.dbtouch.com';
 
-
-function Client(baseUrl){
-    this._baseUrl  = baseUrl || BASE_URL;
+function Client(options) {
+  options = options || {};
+  this.baseUrl = options.baseUrl || BASE_URL;
+  debug('instance created: baseUrl=%s', this.baseUrl);
 }
 
+Client.prototype._makeUrl = function() {
+  var args = [].slice.call(arguments);
+  args.unshift(this.baseUrl);
+  return urlJoin.apply(null, args);
+};
+
+Client.prototype._checkUserId = function(userId) {
+  debug('doing userId check...');
+  this._userId = this._userId || userId;
+
+  if (!this._userId) {
+    debug('error: userId check failed!');
+    throw new Error('No userId provided!');
+  }
+
+  debug('userId check passed: userId=%d', userId);
+};
+
+Client.prototype._checkResponse = function(response, body) {
+  var req = response.request;
+  var url = req.uri.href;
+
+  // locus trap
+  // eval(require('locus'));
+
+  debug('server responded with: %d', response.statusCode);
+  debug('response url: %s', url);
+
+  if (response.statusCode < 200 || response.statusCode >= 300) {
+    debug('error: invalid status code received! [statusCode=%s]', response.statusCode);
+    throw new Error('Server returned an error, request failed!');
+  }
+};
+
+var parseVacationInfo = require('./parser/parseVacationInfo.js');
+var parseRecords = require('./parser/parseRecords.js');
+var parseAbsences = require('./parser/parseAbsences.js');
+
+Client.prototype._handleRecordListResponse = function(options) {
+  return function processBody(response, body) {
+    //jshint validthis:true
+    debug('processing record list response...');
+    this._checkResponse(response, body);
+
+    debug('got valid response, parsing record list...');
+    debug('targetData: %s', options.targetData);
+
+    var data = null;
+    if (options.targetData === 'vacationInfo') {
+      data = parseVacationInfo(body, options);
+      debug('vacation info successfully extracted');
+      return data;
+    }
+
+    if (options.targetData === 'absences') {
+      data = parseAbsences(body, options);
+      debug('absences successfully extracted');
+      return data;
+    }
+
+    if (options.targetData === 'records') {
+      data = parseRecords(body, options);
+      debug('records successfully extracted');
+      return data;
+    }
+
+    debug('warning: unknown targetData!');
+    return data;
+  };
+};
+
 Client.create = function(options){
-    options = options || {};
-
-    var client = new Client(options.baseUrl);
-    return client.login(options.username, options.password);
-};
-Client.baseUrl   = BASE_URL;
-Client.SortOrder = types.SortOrder;
-Client.EntryType = types.EntryType;
-
-Client.prototype.login = function(username, password){
-    var self = this,
-        url  = self._baseUrl + '/login/auth',
-        options;
-
-    self._username = username;
-
-    return request.headAsync(url)
-        .spread(function complete(response, body) {
-            url = self._baseUrl + '/j_spring_security_check';
-            options = {
-                form: {
-                    'j_username': username,
-                    'j_password': password
-                }
-            };
-
-            return request.postAsync(url, options);
-        })
-        .spread(function complete(response, body){
-            var urlPath = response.req.path;
-
-            debug('server responded with: %d', response.statusCode);
-            debug('response url: %s', urlPath);
-
-            var matches = urlPath.match(/^\/record\/usersRecords\/(\d+)$/);
-
-            if (matches && matches[1]) {
-                self._userId = Number(matches[1]);
-                return self;
-            }
-
-            throw new Error('Login failed, wrong username and/or password!');
-        });
+  return new Client(options);
 };
 
-Client.prototype.logout = function(){
-    var url = this._baseUrl + '/j_spring_security_logout';
-    return request.get(url);
-};
+// attach API mixins
+require('./api-mixins/auth.js')(Client.prototype, request);
+require('./api-mixins/records.js')(Client.prototype, request);
+require('./api-mixins/vacation.js')(Client.prototype, request);
+require('./api-mixins/absences.js')(Client.prototype, request);
 
-Client.prototype.getRecords = function(options){
-    options = options || {};
-
-    var path   = '/record/usersRecords/' + this._userId,
-        url    = this._baseUrl + path,
-        offset = options.offset || 1;
-
-    return request.getAsync(url, { qs: { offset: offset }})
-        .spread(function complete(response, body){
-            return scraper.scrapeRecordsPage(body, options.sortOrder, options.forceInEvent);
-        });
-};
-
-Client.prototype.getVacationInfo = function(){
-    var path   = '/dayOff/listUsersDayOffRequests/' + this._userId,
-        url    = this._baseUrl + path;
-
-    return request.getAsync(url)
-        .spread(function complete(response, body){
-            return scraper.scrapeDaysOffPage(body);
-        })
-        .then(function complete(data){
-            return data.vacation;
-        });
-};
-
-Client.prototype.submitNewRecord = function(recordData){
-    var self    = this,
-        url     = self._baseUrl + '/record/saveRecordManual',
-        options = { form: { 'editReason': recordData } };
-
-    return request.postAsync(url, options)
-        .spread(function complete(response, body){
-            debug('server responded with: %d', response.statusCode);
-            debug('response body: %s', body);
-
-            return response.statusCode === 200;
-        });
-};
+Client.EntryType = require('./parser/utils.js').EntryType;
 
 module.exports = Client;

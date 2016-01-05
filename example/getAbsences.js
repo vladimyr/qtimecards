@@ -10,14 +10,12 @@ var client = Client.create({ baseUrl: 'http://attend.dbtouch.com' });
 
 client.login(username, password)
   .then(function complete() {
-    return client.getRecords({
+    return client.getAbsences({
       userId: credentials.userId,
       sortOrder: 'asc',
-      normalizeRecords: true,
-      includeAbsenceInfo: true,
       offset: 2
     });
   })
-  .then(function(records) {
-    console.log(JSON.stringify(records, null, 2));
+  .then(function(absences) {
+    console.log(JSON.stringify(absences, null, 2));
   });

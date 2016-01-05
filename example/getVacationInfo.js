@@ -1,18 +1,19 @@
 'use strict';
 
-var Client      = require('../index.js'),
-    credentials = require('./credentials.json');
+var Client = require('../index.js');
+var credentials = require('./credentials.json');
 
-var options = {
-    username: credentials.username,
-    password: credentials.password,
-    baseUrl: 'http://attend.dbtouch.com'
-};
+var username = credentials.username;
+var password = credentials.password;
 
-Client.create(options)
-    .then(function complete(client){
-        return client.getVacationInfo();
-    })
-    .then(function(info){
-        console.log(JSON.stringify(info, null, 2));
+var client = Client.create({ baseUrl: 'http://attend.dbtouch.com' });
+
+client.login(username, password)
+  .then(function complete() {
+    return client.getVacationInfo({
+      userId: credentials.userId
     });
+  })
+  .then(function(info){
+    console.log(JSON.stringify(info, null, 2));
+  });
