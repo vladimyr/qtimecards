@@ -2,7 +2,7 @@
 
 var acorn = require('acorn');
 var findNodeAt = require('acorn/dist/walk').findNodeAt;
-var _ = require('lodash');
+var camelCase = require('lodash/camelCase');
 var utils = require('./utils.js');
 var debug = require('debug')('absence-data-parser');
 
@@ -21,7 +21,7 @@ function processAbsenceString(str) {
   var absences = [];
 
   entries.forEach(function(entry) {
-    var type = _.camelCase(entry.type);
+    var type = camelCase(entry.type);
     data[type] = entry;
 
     entry.dates = [];

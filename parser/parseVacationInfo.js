@@ -1,12 +1,12 @@
 'use strict';
 
-var _ = require('lodash');
+var compose = require('lodash/flowRight');
 var utils = require('./utils.js');
 
 
 function parseVacationInfo(input, options) {
   var $ = utils.getDOM(input);
-  var num = _.compose(utils.readInteger, utils.querySelector($));
+  var num = compose(utils.readInteger, utils.querySelector($));
 
   var vacationInfo = {
     category: {

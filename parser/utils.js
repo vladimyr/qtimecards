@@ -1,6 +1,6 @@
 'use strict';
 
-var _ = require('lodash');
+var padStart = require('lodash/padStart');
 var util = require('util');
 var cheerio = require('cheerio');
 var fecha = require('fecha');
@@ -103,7 +103,7 @@ function getMinutes(duration) {
 function getDuration(input) {
   var hours = (input / 60) | 0;
   var minutes = Math.abs(input % 60);
-  return util.format('%s:%s', hours, _.padRight(minutes, 2, '0'));
+  return util.format('%s:%s', hours, padStart(minutes, 2, '0'));
 }
 
 function getRecordTime(input) {

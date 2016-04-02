@@ -1,6 +1,6 @@
 'use strict';
 
-var _ = require('lodash');
+var times = require('lodash/times');
 var utils = require('./utils.js');
 var debug = require('debug')('records-parser');
 
@@ -101,7 +101,7 @@ function parseRecords(input, options) {
   var monthlyRecordsMap = {};
 
   var $dailyRows = $('.custom-table-data-one-row');
-  _.times($dailyRows.length, function(i) {
+  times($dailyRows.length, function(i) {
     monthlyRecords.push({
       order: i,
       entries: []
